@@ -1,0 +1,7 @@
+key,value
+package,Newtonsoft.Json
+repository,https://api.nuget.org/v3/index.json
+test_mode,false
+version,13.0.3
+max_depth,3
+filter,Microsoft

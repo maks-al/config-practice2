@@ -1,0 +1,7 @@
+key,value
+package,A
+repository,test_repo.txt
+test_mode,true
+version,1.0.0
+max_depth,3
+filter,
