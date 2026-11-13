@@ -1,4 +1,4 @@
-.PHONY: run test demo
+.PHONY: run test demo graph
 
 run:
 	py run.py --config examples/config_test.csv
@@ -8,3 +8,6 @@ test:
 
 demo:
 	py tests/scenarios.py
+
+graph:
+	py run.py --config examples/config_graph_cycle.csv --graph

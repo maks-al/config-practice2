@@ -2,6 +2,7 @@
 
 import csv
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -63,8 +64,9 @@ def run_case(name: str, path: Path, code: int, expected: str):
     """Запустить CLI и проверить код и вывод"""
     cmd = [sys.executable, str(ROOT / "run.py"), "--config", str(path)]
     cmd.append("--deps")
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     result = subprocess.run(cmd, capture_output=True, text=True,
-                            encoding="utf-8")
+                            encoding="utf-8", env=env)
     output = result.stdout + result.stderr
     print(f"\n=== {name} ===")
     print(f'Команда: py run.py --config "{path}" --deps')
