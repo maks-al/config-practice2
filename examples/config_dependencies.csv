@@ -1,0 +1,7 @@
+key,value
+package,Microsoft.Extensions.Logging
+repository,https://api.nuget.org/v3/index.json
+test_mode,false
+version,8.0.0
+max_depth,3
+filter,
