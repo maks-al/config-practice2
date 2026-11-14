@@ -12,9 +12,8 @@ class ConfigTests(unittest.TestCase):
     """Проверки корректных и ошибочных настроек"""
 
     def __init__(self, method_name="runTest"):
-        """Подготовить данные для отдельного теста"""
-        super().__init__(method_name)
         """Создать независимый временный тестовый репозиторий"""
+        super().__init__(method_name)
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.folder = Path(temp.name)

@@ -11,9 +11,8 @@ class GraphTests(unittest.TestCase):
     """Проверки построения графа зависимостей"""
 
     def __init__(self, method_name="runTest"):
-        """Подготовить данные для отдельного теста"""
-        super().__init__(method_name)
         """Создать тестовый граф с общими зависимостями"""
+        super().__init__(method_name)
         self.repo = {
             "A": ["B", "C"], "B": ["D"], "C": ["F"],
             "D": ["F"], "F": ["G"], "G": []

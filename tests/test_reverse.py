@@ -18,9 +18,8 @@ class ReverseTests(unittest.TestCase):
     """Тесты обратного графа и поиска DFS"""
 
     def __init__(self, method_name="runTest"):
-        """Подготовить данные для отдельного теста"""
-        super().__init__(method_name)
         """Создать граф с общими и независимыми ветвями"""
+        super().__init__(method_name)
         self.repo = {
             "A": ["B", "C"], "B": ["D"], "C": ["D"],
             "D": [], "E": ["D"], "F": ["E"], "G": []
