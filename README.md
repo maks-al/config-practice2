@@ -10,30 +10,31 @@
 ## Требования
 
 - Windows, Python 3.10 или новее
-- Интернет соединение для работы с репозиторием NuGet
-- .NET SDK 8.0.4xx или новее, нужен только для сравнения
+- Интернет для работы с настоящим репозиторием NuGet
+- Сторонние библиотеки Python не требуются
+- .NET SDK 8.0.4xx или новее нужен только для сравнения
 
 ## Запуск
 
 Открыть PowerShell в папке проекта и выполнить:
 
-```
-py run.py
-py run.py --config examples/config_dependencies.csv --deps
-py run.py --graph
-py run.py --config examples/config_graph_cycle.csv --graph
-py run.py --config examples/config_graph_depth.csv --graph
-py run.py --config examples/config_graph_filter.csv --graph
-py run.py --config examples/config_dependencies.csv --graph
-py run.py --config examples/config_reverse.csv --reverse
-py run.py --reverse D
-py run.py --config examples/config_reverse_depth.csv --reverse
-py run.py --config examples/config_reverse_filter.csv --reverse
-py run.py --config examples/config_dependencies.csv --reverse Microsoft.Extensions.Logging.Abstractions
-py run.py --config examples/config_uml_a.csv --uml
-py run.py --config examples/config_uml_c.csv --uml
-py run.py --config examples/config_uml_g.csv --uml
-py run.py --config examples/config_uml_nuget.csv --uml
+```powershell
+.\run.bat
+.\run.bat --config examples/config_dependencies.csv --deps
+.\run.bat --graph
+.\run.bat --config examples/config_graph_cycle.csv --graph
+.\run.bat --config examples/config_graph_depth.csv --graph
+.\run.bat --config examples/config_graph_filter.csv --graph
+.\run.bat --config examples/config_dependencies.csv --graph
+.\run.bat --config examples/config_reverse.csv --reverse
+.\run.bat --reverse D
+.\run.bat --config examples/config_reverse_depth.csv --reverse
+.\run.bat --config examples/config_reverse_filter.csv --reverse
+.\run.bat --config examples/config_dependencies.csv --reverse Microsoft.Extensions.Logging.Abstractions
+.\run.bat --config examples/config_uml_a.csv --uml
+.\run.bat --config examples/config_uml_c.csv --uml
+.\run.bat --config examples/config_uml_g.csv --uml
+.\run.bat --config examples/config_uml_nuget.csv --uml
 ```
 
 Без ключей программа выводит настройки из `examples/config_test.csv`
@@ -42,11 +43,11 @@ py run.py --config examples/config_uml_nuget.csv --uml
 После `--reverse` можно указать имя пакета или `имя@версия`
 Без имени используется параметр `package` из CSV
 Режимы `--deps`, `--graph`, `--reverse`, `--uml` взаимоисключающие
-`--uml` выводит текст диаграммы, графические файлы не создаются
+`--uml` выводит PlantUML и сохраняет SVG в папку `output/`
 
 Пример графа с циклом:
 
-```
+```text
 Граф зависимостей: A
 A -> B, C
 B -> C
@@ -55,7 +56,7 @@ C -> A
 
 Пример графа с ограничением глубины 2:
 
-```
+```text
 Граф зависимостей: A
 A -> B, C
 B -> D
@@ -66,7 +67,7 @@ F -> (нет)
 
 Пример обратных зависимостей:
 
-```
+```text
 Обратные зависимости: D
 D <- B, C, E
 B <- A
@@ -86,7 +87,7 @@ F <- (нет)
 | `repository` | HTTP(S) URL или путь к текстовому графу |
 | `test_mode` | `true` либо `false` |
 | `version` | Версия исходного пакета, например `8.0.0` |
-| `max_depth` | Максимальная глубина DFS |
+| `max_depth` | Максимальная глубина DFS, начиная с 0 |
 | `filter` | Подстрока для исключения пакетов, может быть пустой |
 
 В тестовом режиме путь `repository` считается относительно CSV-файла
@@ -97,7 +98,7 @@ F <- (нет)
 
 Файл описывает узлы и их прямые зависимости:
 
-```
+```text
 A: B C
 B: D
 C: D
@@ -118,9 +119,10 @@ DFS использует стек, без рекурсивных вызовов
 
 В режиме NuGet программа запрашивает список доступных версий каждой
 зависимости и выбирает минимальную подходящую стабильную версию
-При наличии prerelease в диапазоне учитываются предварительные версии
+При явном prerelease в диапазоне учитываются предварительные версии
 Диапазоны берутся из `.nuspec`, загрузка выполняется через NuGet V3
 Зависимости разных `targetFramework` объединяются в один граф
+Это учебный граф возможных зависимостей, не точная модель `dotnet restore`
 
 ## Обратные зависимости
 
@@ -136,14 +138,14 @@ NuGet не предоставляет полный список всех пак�
 
 ## PlantUML
 
-Каждый пакет отображается прямоугольником, зависимость стрелкой
+Каждый пакет отображается прямоугольником, зависимость - стрелкой
 Сохранены исходные направления рёбер, общие узлы и циклы
 Текст начинается с `@startuml` и заканчивается `@enduml`
 В тестах демонстрируются три разных пакета: `A`, `C`, `G`
 
 Пример:
 
-```
+```text
 @startuml
 left to right direction
 rectangle "A" as N0
@@ -152,16 +154,17 @@ N0 --> N1
 @enduml
 ```
 
-Для отображения диаграммы текст можно вставить в редактор PlantUML
-Программа выводит только описание, как указано в задании
+Программа выводит PlantUML и сохраняет изображение `output/Имя.svg`
+SVG можно открыть в браузере, сторонние библиотеки не требуются
+Папка `output/` исключена из Git
 
 ## Сравнение с NuGet
 
-```
+```powershell
 py scripts/compare_dotnet.py
 ```
 
-Требуются .NET SDK и доступ к `https://api.nuget.org/v3/index.json`
+Нужны .NET SDK и доступ к `https://api.nuget.org/v3/index.json`
 Скрипт создаёт временные `.csproj` для трёх настоящих NuGet-пакетов
 Затем запускает `dotnet restore`, `dotnet list package --include-transitive`
 и `dotnet nuget why`, сопоставляя пакеты и разрешённые версии
@@ -173,18 +176,16 @@ py scripts/compare_dotnet.py
 
 ## Проверки
 
-```
-py -m unittest discover -s tests -v
-py tests/scenarios.py
-py tests/nuget_scenarios.py
-py tests/graph_scenarios.py
-py tests/reverse_scenarios.py
-py tests/uml_scenarios.py
+Открыть PowerShell в папке проекта и выполнить:
+
+```powershell
+.\tests.bat
 ```
 
-Первая команда запускает unit-тесты всех пяти этапов
-Остальные показывают команды, результаты и ошибки в консоли
-Проверка NuGet работает с локальным HTTP-сервером без внешнего интернета
+Один BAT запускает проверки всех пяти этапов
+В консоли выводятся команды, ответы программы, ошибки и PASS/FAIL
+Проверяются CSV, NuGet, DFS, обратные связи, PlantUML и SVG
+Unit-тесты и сценарии запускаются автоматически через `tests.bat`
 
 ## Основные функции
 
@@ -229,7 +230,11 @@ py tests/uml_scenarios.py
 | `load_graph()` | Загрузка графа NuGet или файла |
 | `show_reverse()` | Вывод обратных зависимостей |
 | `to_plantuml()` | Построение описания PlantUML |
-| `show_uml()` | Вывод диаграммы |
+| `show_uml()` | Вывод PlantUML и сохранение SVG |
+| `save_svg()` | Сохранение SVG в `output/` |
+| `layout()` | Расположение узлов по уровням |
+| `edge_lines()` | Стрелки между узлами |
+| `node_lines()` | Прямоугольники и подписи |
 | `make_project()` | Временный проект .NET |
 | `run_tool()` | Запуск команды .NET |
 | `read_packages()` | Чтение штатного списка пакетов |
@@ -251,7 +256,16 @@ py tests/uml_scenarios.py
 - `src/versions.py` - версии и диапазоны NuGet
 - `src/nuget_graph.py` - загрузка транзитивных зависимостей NuGet
 - `src/uml.py` - формирование текста PlantUML
+- `src/render.py` - построение SVG без сторонних библиотек
 - `scripts/compare_dotnet.py` - сравнение со штатным NuGet
 - `examples/` - конфигурации и тестовые графы
 - `tests/` - unit-тесты и демонстрационные сценарии этапов 1-5
+- `run.bat` - запуск программы на Windows
+- `tests.bat` - все тесты и проверка SVG
+- `output/` - сгенерированные SVG, не добавляются в Git
 - `Makefile` - дополнительный способ запуска при наличии `make`
+
+## Git
+
+Проект разделён на 5 этапов с отдельными коммитами
+Пятый коммит: `feat(uml): add PlantUML dependency graphs`

@@ -10,6 +10,7 @@ from src.graph import build_graph, read_test_repo
 from src.nuget import direct_dependencies, normalize_version
 from src.nuget_graph import NugetGraph
 from src.reverse import filter_repo, reverse_dependencies
+from src.render import save_svg
 from src.uml import to_plantuml
 
 DEFAULT = Path(__file__).resolve().parent.parent / "examples/config_test.csv"
@@ -111,8 +112,11 @@ def show_reverse(config, filename, target: str) -> None:
 
 
 def show_uml(config, filename) -> None:
-    """Вывести текст графа на языке PlantUML"""
-    _, graph = load_graph(config, filename)
+    """Вывести PlantUML и сохранить SVG"""
+    root, graph = load_graph(config, filename)
+    folder = Path(__file__).resolve().parent.parent / "output"
+    svg = save_svg(graph, root, folder)
+    print(f"SVG: {svg}", file=sys.stderr)
     print(to_plantuml(graph))
 
 
