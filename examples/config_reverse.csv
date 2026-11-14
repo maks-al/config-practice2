@@ -1,0 +1,7 @@
+key,value
+package,D
+repository,graph_reverse.txt
+test_mode,true
+version,1.0.0
+max_depth,4
+filter,

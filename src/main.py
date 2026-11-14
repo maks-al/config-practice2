@@ -9,12 +9,13 @@ from src.config import load_config
 from src.graph import build_graph, read_test_repo
 from src.nuget import direct_dependencies, normalize_version
 from src.nuget_graph import NugetGraph
+from src.reverse import filter_repo, reverse_dependencies
 
 DEFAULT = Path(__file__).resolve().parent.parent / "examples/config_test.csv"
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Прочитать CSV и показать шесть проверенных параметров"""
+    """Запустить выбранный режим консольной программы"""
     parser = argparse.ArgumentParser(description="Анализатор зависимостей")
     parser.add_argument("--config", default=DEFAULT, help="путь к CSV")
     mode = parser.add_mutually_exclusive_group()
@@ -22,6 +23,8 @@ def main(argv: list[str] | None = None) -> int:
                       help="показать прямые зависимости NuGet")
     mode.add_argument("--graph", action="store_true",
                       help="построить граф зависимостей DFS")
+    mode.add_argument("--reverse", nargs="?", const="", metavar="PACKAGE",
+                      help="показать обратные зависимости пакета")
     args = parser.parse_args(argv)
 
     try:
@@ -31,6 +34,9 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.graph:
             show_graph(config, args.config)
+            return 0
+        if args.reverse is not None:
+            show_reverse(config, args.config, args.reverse or config.package)
             return 0
     except ValueError as error:
         print(f"Ошибка: {error}", file=sys.stderr)
@@ -59,8 +65,8 @@ def show_dependencies(config) -> None:
             print(f"    {name}: {version}")
 
 
-def show_graph(config, filename) -> None:
-    """Построить и вывести граф зависимостей с учётом настроек"""
+def load_graph(config, filename) -> tuple:
+    """Получить обычный граф из файла или NuGet"""
     if config.test_mode:
         folder = Path(filename).expanduser().resolve().parent
         repo = read_test_repo(folder / config.repository)
@@ -73,9 +79,29 @@ def show_graph(config, filename) -> None:
         root = f"{config.package}@{normalize_version(config.version)}"
         children = source.children
     graph = build_graph(root, children, config.max_depth, config.filter)
+    return root, graph
+
+
+def show_graph(config, filename) -> None:
+    """Вывести граф зависимостей в исходном направлении"""
+    root, graph = load_graph(config, filename)
     print(f"Граф зависимостей: {root}")
     for name, deps in graph.items():
         print(f"{name} -> {', '.join(deps) if deps else '(нет)'}")
+
+
+def show_reverse(config, filename, target: str) -> None:
+    """Вывести пакеты, зависящие от выбранного пакета"""
+    if config.test_mode:
+        folder = Path(filename).expanduser().resolve().parent
+        repo = read_test_repo(folder / config.repository)
+        graph = filter_repo(repo, config.filter)
+    else:
+        _, graph = load_graph(config, filename)
+    node, reverse = reverse_dependencies(graph, target, config.max_depth)
+    print(f"Обратные зависимости: {node}")
+    for name, parents in reverse.items():
+        print(f"{name} <- {', '.join(parents) if parents else '(нет)'}")
 
 
 if __name__ == "__main__":

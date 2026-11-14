@@ -1,9 +1,10 @@
-# Практическая работа №2 - вариант 1, этапы 1-3
+# Практическая работа №2 - вариант 1, этапы 1-4
 
 Консольная программа на Python для анализа зависимостей пакетов NuGet
 Этап 1 - загрузка и проверка настроек из CSV
 Этап 2 - получение прямых зависимостей пакета по HTTP
 Этап 3 - построение графа зависимостей алгоритмом DFS без рекурсии
+Этап 4 - поиск прямых и транзитивных обратных зависимостей
 
 ## Требования
 
@@ -23,11 +24,19 @@ py run.py --config examples/config_graph_cycle.csv --graph
 py run.py --config examples/config_graph_depth.csv --graph
 py run.py --config examples/config_graph_filter.csv --graph
 py run.py --config examples/config_dependencies.csv --graph
+py run.py --config examples/config_reverse.csv --reverse
+py run.py --reverse D
+py run.py --config examples/config_reverse_depth.csv --reverse
+py run.py --config examples/config_reverse_filter.csv --reverse
+py run.py --config examples/config_dependencies.csv --reverse Microsoft.Extensions.Logging.Abstractions
 ```
 
 Без ключей программа выводит настройки из `examples/config_test.csv`
-`--deps` показывает прямые зависимости NuGet, `--graph` строит полный граф
-Эти ключи нельзя указывать одновременно
+`--deps` показывает прямые зависимости NuGet, `--graph` строит граф
+`--reverse` показывает обратные зависимости пакета
+После `--reverse` можно указать имя пакета или `имя@версия`
+Без имени используется параметр `package` из CSV
+Эти три режима нельзя указывать одновременно
 
 Пример графа с циклом:
 
@@ -47,6 +56,18 @@ B -> D
 C -> F
 D -> (нет)
 F -> (нет)
+```
+
+Пример обратных зависимостей:
+
+```text
+Обратные зависимости: D
+D <- B, C, E
+B <- A
+C <- A
+E <- F
+A <- (нет)
+F <- (нет)
 ```
 
 ## Формат CSV
@@ -96,6 +117,18 @@ DFS использует стек, без рекурсивных вызовов
 Зависимости разных `targetFramework` объединяются в один граф
 Это учебный граф возможных зависимостей, не точная модель `dotnet restore`
 
+## Обратные зависимости
+
+`D <- B, C` означает, что пакеты B и C зависят от D
+Поиск выполняется через обратные рёбра и нерекурсивный DFS
+`max_depth` ограничивает число переходов от выбранного пакета
+`filter` исключает узлы и связи с ними
+Циклы не вызывают бесконечного обхода
+
+В тестовом режиме проверяется весь граф из файла, включая отдельные ветви
+В режиме NuGet анализируются пакеты из графа, построенного от `package`
+NuGet не предоставляет полный список всех пакетов, зависящих от заданного
+
 ## Проверки
 
 ```powershell
@@ -103,9 +136,10 @@ py -m unittest discover -s tests -v
 py tests/scenarios.py
 py tests/nuget_scenarios.py
 py tests/graph_scenarios.py
+py tests/reverse_scenarios.py
 ```
 
-Первая команда запускает unit-тесты всех трёх этапов
+Первая команда запускает unit-тесты всех четырёх этапов
 Остальные показывают команды, результаты и ошибки в консоли
 Проверка NuGet работает с локальным HTTP-сервером без внешнего интернета
 
@@ -145,6 +179,12 @@ py tests/graph_scenarios.py
 | `NugetGraph.children()` | Получение дочерних узлов |
 | `show_dependencies()` | Вывод прямых зависимостей |
 | `show_graph()` | Вывод графа |
+| `filter_repo()` | Фильтрация тестового репозитория |
+| `invert_graph()` | Построение обратных связей |
+| `find_target()` | Поиск выбранного узла |
+| `reverse_dependencies()` | Обратный DFS |
+| `load_graph()` | Загрузка графа NuGet или файла |
+| `show_reverse()` | Вывод обратных зависимостей |
 | `main()` | Обработка параметров CLI |
 
 ## Файлы
@@ -154,13 +194,14 @@ py tests/graph_scenarios.py
 - `src/main.py` - интерфейс командной строки
 - `src/nuget.py` - NuGet API и XML
 - `src/graph.py` - тестовые графы и DFS
+- `src/reverse.py` - обратные связи и обход
 - `src/versions.py` - версии и диапазоны NuGet
 - `src/nuget_graph.py` - загрузка транзитивных зависимостей NuGet
 - `examples/` - конфигурации и тестовые графы
-- `tests/` - unit-тесты и демонстрационные сценарии
+- `tests/` - unit-тесты и демонстрационные сценарии этапов 1-4
 - `Makefile` - дополнительный способ запуска при наличии `make`
 
 ## Git
 
 Проект разделён на 5 этапов с отдельными коммитами
-Третий коммит: `feat(graph): add iterative DFS dependency graph`
+Четвёртый коммит: `feat(reverse): add reverse dependency lookup`
