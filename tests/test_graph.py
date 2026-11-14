@@ -10,7 +10,9 @@ from src.graph import build_graph, read_test_repo
 class GraphTests(unittest.TestCase):
     """Проверки построения графа зависимостей"""
 
-    def setUp(self):
+    def __init__(self, method_name="runTest"):
+        """Подготовить данные для отдельного теста"""
+        super().__init__(method_name)
         """Создать тестовый граф с общими зависимостями"""
         self.repo = {
             "A": ["B", "C"], "B": ["D"], "C": ["F"],

@@ -1,6 +1,7 @@
 """Демонстрация обратных зависимостей через настоящий CLI"""
 
 import os
+from functools import partial
 import subprocess
 import sys
 import tempfile
@@ -8,7 +9,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
 
-from graph_scenarios import Handler, save_config
+from graph_scenarios import Handler, save_config, save_repo
 
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = ROOT / "examples"
@@ -33,17 +34,20 @@ def run_case(name: str, path: Path, target: str, expected: str,
 
 def run_nuget() -> None:
     """Проверить обратные зависимости через локальный NuGet API"""
-    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-        thread = Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-        try:
+    with tempfile.TemporaryDirectory() as temp:
+        folder = Path(temp)
+        handler = partial(Handler, directory=temp)
+        with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
             root = f"http://127.0.0.1:{server.server_port}"
-            with tempfile.TemporaryDirectory() as temp:
-                path = save_config(Path(temp), root + "/v3/index.json")
+            save_repo(folder, root)
+            thread = Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                path = save_config(folder, root + "/v3/index.json")
                 run_case("NuGet через HTTP", path, "Package.Common",
                          "Package.Common@2.0.0 <- Package.One@1.0.0")
-        finally:
-            server.shutdown()
+            finally:
+                server.shutdown()
 
 
 def main() -> None:

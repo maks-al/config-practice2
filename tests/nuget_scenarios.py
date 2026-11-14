@@ -6,8 +6,8 @@ import os
 import subprocess
 import sys
 import tempfile
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
 
@@ -20,29 +20,26 @@ XML = b"""<package xmlns="urn:nuget"><metadata><dependencies>
 </group></dependencies></metadata></package>"""
 
 
-class Handler(BaseHTTPRequestHandler):
-    """Простейший тестовый NuGet V3 сервер"""
-
-    def do_GET(self):
-        """Отдать индекс NuGet или nuspec"""
-        root = f"http://127.0.0.1:{self.server.server_port}"
-        index = {"resources": [
-            {"@type": "PackageBaseAddress/3.0.0", "@id": root + "/flat"}
-        ]}
-        data = None
-        if self.path == "/v3/index.json":
-            data = json.dumps(index).encode("utf-8")
-        if self.path == "/flat/demo.package/2.1.0/demo.package.nuspec":
-            data = XML
-        if data is None:
-            self.send_error(HTTPStatus.NOT_FOUND)
-            return
-        self.send_response(HTTPStatus.OK)
-        self.end_headers()
-        self.wfile.write(data)
+class Handler(SimpleHTTPRequestHandler):
+    """Раздача тестовых NuGet-файлов по HTTP"""
 
     def log_message(self, fmt, *args):
-        """Не выводить сообщения HTTP-сервера"""
+        """Не выводить журнал HTTP-сервера"""
+
+
+def save_repo(folder: Path, root: str) -> None:
+    """Подготовить сервисный индекс и манифест тестового пакета"""
+    index = {"resources": [
+        {"@type": "PackageBaseAddress/3.0.0", "@id": root + "/flat"}
+    ]}
+    files = {
+        "v3/index.json": json.dumps(index).encode("utf-8"),
+        "flat/demo.package/2.1.0/demo.package.nuspec": XML,
+    }
+    for name, data in files.items():
+        path = folder / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
 
 
 def save_config(folder: Path, url: str, version: str) -> Path:
@@ -78,13 +75,15 @@ def run_case(name: str, path: Path, code: int, expected: str):
 
 def main():
     """Проверить прямые зависимости и ошибки без внешнего интернета"""
-    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-        thread = Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-        try:
+    with tempfile.TemporaryDirectory() as temp:
+        folder = Path(temp)
+        handler = partial(Handler, directory=temp)
+        with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
             base = f"http://127.0.0.1:{server.server_port}"
-            with tempfile.TemporaryDirectory() as temp:
-                folder = Path(temp)
+            save_repo(folder, base)
+            thread = Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
                 good = save_config(folder, base + "/v3/index.json", "2.1.0")
                 run_case("NuGet и группы платформ", good, 0, "Package.Two")
                 bad = save_config(folder, base + "/v3/index.json", "2.1.1")
@@ -93,8 +92,8 @@ def main():
                 run_case("Недоступный индекс", wrong, 1, "HTTP 404")
                 sample = ROOT / "examples/config_test.csv"
                 run_case("Тестовый режим", sample, 1, "test_mode=false")
-        finally:
-            server.shutdown()
+            finally:
+                server.shutdown()
     print("\nИТОГ: 4 сценария этапа 2 пройдены")
 
 

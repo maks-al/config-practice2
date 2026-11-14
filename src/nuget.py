@@ -3,7 +3,7 @@
 import json
 import urllib.error
 import urllib.request
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as xml_tree
 from urllib.parse import urlsplit
 
 TIMEOUT = 15
@@ -84,7 +84,7 @@ def normalize_version(version: str) -> str:
     return result + ("-" + suffix.lower() if sep else "")
 
 
-def dependency_items(node: ET.Element) -> list[tuple[str, str]]:
+def dependency_items(node: xml_tree.Element) -> list[tuple[str, str]]:
     """Прочитать имена и диапазоны версий зависимостей"""
     items = []
     for dep in node.findall("{*}dependency"):
@@ -99,8 +99,8 @@ def dependency_items(node: ET.Element) -> list[tuple[str, str]]:
 def parse_nuspec(data: bytes) -> list[tuple[str, list]]:
     """Разобрать прямые зависимости из XML-манифеста"""
     try:
-        root = ET.fromstring(data)
-    except ET.ParseError as error:
+        root = xml_tree.fromstring(data)
+    except xml_tree.ParseError as error:
         raise ValueError(f"неверный XML nuspec: {error}") from error
     metadata = root.find("{*}metadata")
     if metadata is None:

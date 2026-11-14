@@ -4,7 +4,7 @@ import io
 import json
 import tempfile
 import unittest
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as xml_tree
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -20,7 +20,7 @@ class CompareTests(unittest.TestCase):
         """Генерация .csproj сохраняет имя и версию пакета"""
         with tempfile.TemporaryDirectory() as temp:
             path = make_project(Path(temp), "Package.One", "2.1.0")
-            root = ET.parse(path).getroot()
+            root = xml_tree.parse(path).getroot()
         self.assertEqual(root.attrib["Sdk"], "Microsoft.NET.Sdk")
         dep = root.find("./ItemGroup/PackageReference")
         self.assertEqual(dep.attrib["Include"], "Package.One")

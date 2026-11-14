@@ -6,8 +6,8 @@ import os
 import subprocess
 import sys
 import tempfile
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
 
@@ -38,28 +38,23 @@ DATA = {
 }
 
 
-class Handler(BaseHTTPRequestHandler):
-    """Локальный репозиторий с циклом зависимостей"""
-
-    def do_GET(self):
-        """Отдать service index или конкретный документ"""
-        if self.path == "/v3/index.json":
-            root = f"http://127.0.0.1:{self.server.server_port}"
-            index = {"resources": [
-                {"@type": "PackageBaseAddress/3.0.0", "@id": root + "/flat"}
-            ]}
-            data = json.dumps(index).encode()
-        else:
-            data = DATA.get(self.path)
-        if data is None:
-            self.send_error(HTTPStatus.NOT_FOUND)
-            return
-        self.send_response(HTTPStatus.OK)
-        self.end_headers()
-        self.wfile.write(data)
+class Handler(SimpleHTTPRequestHandler):
+    """Раздача файлов тестового репозитория"""
 
     def log_message(self, fmt, *args):
-        """Скрыть служебные записи HTTP-сервера"""
+        """Скрыть журнал HTTP-запросов"""
+
+
+def save_repo(folder: Path, root: str) -> None:
+    """Создать локальный репозиторий NuGet из тестовых данных"""
+    index = {"resources": [
+        {"@type": "PackageBaseAddress/3.0.0", "@id": root + "/flat"}
+    ]}
+    files = {**DATA, "/v3/index.json": json.dumps(index).encode()}
+    for name, data in files.items():
+        path = folder / name.lstrip("/")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
 
 
 def save_config(folder: Path, url: str) -> Path:
@@ -95,16 +90,19 @@ def run_case(name: str, path: Path, expected: str, code: int = 0):
 
 def run_nuget():
     """Проверить реальный HTTP и транзитивный граф с циклом"""
-    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-        thread = Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-        try:
+    with tempfile.TemporaryDirectory() as temp:
+        folder = Path(temp)
+        handler = partial(Handler, directory=temp)
+        with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
             root = f"http://127.0.0.1:{server.server_port}"
-            with tempfile.TemporaryDirectory() as temp:
-                path = save_config(Path(temp), root + "/v3/index.json")
+            save_repo(folder, root)
+            thread = Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                path = save_config(folder, root + "/v3/index.json")
                 run_case("NuGet через HTTP", path, "Package.Common@2.0.0")
-        finally:
-            server.shutdown()
+            finally:
+                server.shutdown()
 
 
 def main():

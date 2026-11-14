@@ -17,7 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 class ReverseTests(unittest.TestCase):
     """Тесты обратного графа и поиска DFS"""
 
-    def setUp(self):
+    def __init__(self, method_name="runTest"):
+        """Подготовить данные для отдельного теста"""
+        super().__init__(method_name)
         """Создать граф с общими и независимыми ветвями"""
         self.repo = {
             "A": ["B", "C"], "B": ["D"], "C": ["D"],

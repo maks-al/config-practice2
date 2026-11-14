@@ -11,7 +11,9 @@ from src.config import load_config
 class ConfigTests(unittest.TestCase):
     """Проверки корректных и ошибочных настроек"""
 
-    def setUp(self):
+    def __init__(self, method_name="runTest"):
+        """Подготовить данные для отдельного теста"""
+        super().__init__(method_name)
         """Создать независимый временный тестовый репозиторий"""
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)

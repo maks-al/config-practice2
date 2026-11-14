@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as xml_tree
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,14 +25,14 @@ CASES = (
 
 def make_project(folder: Path, package: str, version: str) -> Path:
     """Создать временный проект .NET 8 с указанным NuGet-пакетом"""
-    root = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
-    settings = ET.SubElement(root, "PropertyGroup")
-    ET.SubElement(settings, "TargetFramework").text = "net8.0"
-    items = ET.SubElement(root, "ItemGroup")
-    ET.SubElement(items, "PackageReference", Include=package,
+    root = xml_tree.Element("Project", Sdk="Microsoft.NET.Sdk")
+    settings = xml_tree.SubElement(root, "PropertyGroup")
+    xml_tree.SubElement(settings, "TargetFramework").text = "net8.0"
+    items = xml_tree.SubElement(root, "ItemGroup")
+    xml_tree.SubElement(items, "PackageReference", Include=package,
                   Version=version)
     path = folder / "Comparison.csproj"
-    ET.ElementTree(root).write(path, encoding="utf-8",
+    xml_tree.ElementTree(root).write(path, encoding="utf-8",
                                xml_declaration=True)
     return path
 

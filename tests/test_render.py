@@ -2,7 +2,7 @@
 
 import tempfile
 import unittest
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as xml_tree
 from pathlib import Path
 
 from src.render import save_svg
@@ -30,7 +30,7 @@ class SvgTests(unittest.TestCase):
     def test_nodes_and_arrows(self):
         """SVG содержит два прямоугольника и стрелку"""
         file = self.save({"A": ["B"], "B": []}, "A")
-        tree = ET.parse(file)
+        tree = xml_tree.parse(file)
         self.assertEqual(len(tree.findall(f".//{SVG}text")), 2)
         self.assertEqual(len(tree.findall(f".//{SVG}line")), 1)
         self.assertIsNotNone(tree.find(f".//{SVG}marker"))
@@ -38,13 +38,13 @@ class SvgTests(unittest.TestCase):
     def test_cycle(self):
         """Цикл записывается как две направленные связи"""
         file = self.save({"A": ["B"], "B": ["A"]}, "A")
-        tree = ET.parse(file)
+        tree = xml_tree.parse(file)
         self.assertEqual(len(tree.findall(f".//{SVG}line")), 2)
 
     def test_special_characters(self):
         """Специальные символы не повреждают XML"""
         file = self.save({"A&B": ['C<"D'], 'C<"D': []}, "A&B")
-        tree = ET.parse(file)
+        tree = xml_tree.parse(file)
         text = [node.text for node in tree.findall(f".//{SVG}text")]
         self.assertIn("A&B", text)
         self.assertIn('C<"D', text)
@@ -52,9 +52,9 @@ class SvgTests(unittest.TestCase):
     def test_empty_and_loop(self):
         """Пустой граф и петля создают корректный SVG"""
         empty = self.save({}, "G")
-        self.assertEqual(ET.parse(empty).getroot().tag, f"{SVG}svg")
+        self.assertEqual(xml_tree.parse(empty).getroot().tag, f"{SVG}svg")
         loop = self.save({"A": ["A"]}, "A")
-        self.assertIsNotNone(ET.parse(loop).find(f".//{SVG}path"))
+        self.assertIsNotNone(xml_tree.parse(loop).find(f".//{SVG}path"))
 
     def test_filename(self):
         """Недопустимые символы заменяются в имени файла"""

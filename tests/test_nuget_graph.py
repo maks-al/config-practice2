@@ -20,7 +20,9 @@ XML = b"""<package><metadata><dependencies>
 class NugetGraphTests(unittest.TestCase):
     """Проверки загрузки манифестов, версий и кеширования"""
 
-    def setUp(self):
+    def __init__(self, method_name="runTest"):
+        """Подготовить данные для отдельного теста"""
+        super().__init__(method_name)
         """Подготовить ответы тестового NuGet-репозитория"""
         self.data = {
             BASE + "/root.package/1.0.0/root.package.nuspec": XML,
