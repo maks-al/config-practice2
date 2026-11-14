@@ -74,18 +74,21 @@ echo Command: run.bat %~4
 call "%~dp0run.bat" %~4 >"%LOG%" 2>&1
 set "actual=%errorlevel%"
 type "%LOG%"
-if not "%actual%"=="%~3" (
-    echo FAIL: exit code %actual%, expected %~3
-    exit /b 1
-)
+if not "%actual%"=="%~3" goto :wrong_code
 findstr /L /C:"%~2" "%LOG%" >nul 2>&1
-if errorlevel 1 (
-    echo FAIL: expected text not found: %~2
-    exit /b 1
-)
+if errorlevel 1 goto :missing_text
 set /a "checked+=1" >nul
 echo PASS
 exit /b 0
+
+:wrong_code
+echo FAIL: exit code %actual%, expected %~3
+exit /b 1
+
+:missing_text
+echo FAIL: expected text not found
+echo Expected: "%~2"
+exit /b 1
 
 :svg
 call :case "%~1" "@startuml" 0 "--config %~2 --uml"
