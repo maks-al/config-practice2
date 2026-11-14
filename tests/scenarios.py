@@ -1,4 +1,4 @@
-"""Показательные запуски CLI с печатью команд и результатов."""
+"""Показательные запуски CLI с печатью команд и результатов"""
 
 import csv
 import os
@@ -17,7 +17,7 @@ DATA = {
 
 
 def run_case(name, config, success, expected):
-    """Проверить вывод и код завершения отдельного процесса."""
+    """Проверить вывод и код завершения отдельного процесса"""
     cmd = [sys.executable, str(ROOT / "run.py"), "--config", str(config)]
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     result = subprocess.run(
@@ -34,7 +34,7 @@ def run_case(name, config, success, expected):
 
 
 def save_config(folder, name, key, value):
-    """Создать временный CSV с ошибочным значением одного поля."""
+    """Создать временный CSV с ошибочным значением одного поля"""
     data = dict(DATA)
     (folder / "test_repo.txt").write_text("A: B\nB:\n", encoding="utf-8")
     data[key] = value
@@ -47,7 +47,7 @@ def save_config(folder, name, key, value):
 
 
 def main():
-    """Показать два успешных запуска и ошибки всех шести полей."""
+    """Показать два успешных запуска и ошибки всех шести полей"""
     run_case("Тестовый режим", EXAMPLES / "config_test.csv", True, "A")
     run_case("NuGet URL", EXAMPLES / "config_nuget.csv", True, "13.0.3")
     bad = {

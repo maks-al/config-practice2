@@ -1,16 +1,18 @@
-# Практическая работа №2 - вариант 1, этапы 1-4
+# Практическая работа №2 - вариант 1, этапы 1-5
 
 Консольная программа на Python для анализа зависимостей пакетов NuGet
 Этап 1 - загрузка и проверка настроек из CSV
 Этап 2 - получение прямых зависимостей пакета по HTTP
 Этап 3 - построение графа зависимостей алгоритмом DFS без рекурсии
 Этап 4 - поиск прямых и транзитивных обратных зависимостей
+Этап 5 - вывод графов PlantUML и сравнение с .NET
 
 ## Требования
 
 - Windows, Python 3.10 или новее
 - Интернет для работы с настоящим репозиторием NuGet
 - Сторонние библиотеки Python не требуются
+- .NET SDK 8.0.4xx или новее нужен только для сравнения
 
 ## Запуск
 
@@ -29,6 +31,10 @@ py run.py --reverse D
 py run.py --config examples/config_reverse_depth.csv --reverse
 py run.py --config examples/config_reverse_filter.csv --reverse
 py run.py --config examples/config_dependencies.csv --reverse Microsoft.Extensions.Logging.Abstractions
+py run.py --config examples/config_uml_a.csv --uml
+py run.py --config examples/config_uml_c.csv --uml
+py run.py --config examples/config_uml_g.csv --uml
+py run.py --config examples/config_uml_nuget.csv --uml
 ```
 
 Без ключей программа выводит настройки из `examples/config_test.csv`
@@ -36,7 +42,8 @@ py run.py --config examples/config_dependencies.csv --reverse Microsoft.Extensio
 `--reverse` показывает обратные зависимости пакета
 После `--reverse` можно указать имя пакета или `имя@версия`
 Без имени используется параметр `package` из CSV
-Эти три режима нельзя указывать одновременно
+Режимы `--deps`, `--graph`, `--reverse`, `--uml` взаимоисключающие
+`--uml` выводит текст диаграммы, графические файлы не создаются
 
 Пример графа с циклом:
 
@@ -129,6 +136,43 @@ DFS использует стек, без рекурсивных вызовов
 В режиме NuGet анализируются пакеты из графа, построенного от `package`
 NuGet не предоставляет полный список всех пакетов, зависящих от заданного
 
+## PlantUML
+
+Каждый пакет отображается прямоугольником, зависимость - стрелкой
+Сохранены исходные направления рёбер, общие узлы и циклы
+Текст начинается с `@startuml` и заканчивается `@enduml`
+В тестах демонстрируются три разных пакета: `A`, `C`, `G`
+
+Пример:
+
+```text
+@startuml
+left to right direction
+rectangle "A" as N0
+rectangle "B" as N1
+N0 --> N1
+@enduml
+```
+
+Для отображения диаграммы текст можно вставить в редактор PlantUML
+Программа выводит только описание, как указано в задании
+
+## Сравнение с NuGet
+
+```powershell
+py scripts/compare_dotnet.py
+```
+
+Нужны .NET SDK и доступ к `https://api.nuget.org/v3/index.json`
+Скрипт создаёт временные `.csproj` для трёх настоящих NuGet-пакетов
+Затем запускает `dotnet restore`, `dotnet list package --include-transitive`
+и `dotnet nuget why`, сопоставляя пакеты и разрешённые версии
+
+Наш граф объединяет зависимости разных .NET-платформ и ограничен глубиной
+Штатный NuGet учитывает платформу `net8.0` и разрешает конфликты версий
+Поэтому количество пакетов, версии и связи могут различаться
+Временные файлы создаются вне репозитория и автоматически удаляются
+
 ## Проверки
 
 ```powershell
@@ -137,9 +181,10 @@ py tests/scenarios.py
 py tests/nuget_scenarios.py
 py tests/graph_scenarios.py
 py tests/reverse_scenarios.py
+py tests/uml_scenarios.py
 ```
 
-Первая команда запускает unit-тесты всех четырёх этапов
+Первая команда запускает unit-тесты всех пяти этапов
 Остальные показывают команды, результаты и ошибки в консоли
 Проверка NuGet работает с локальным HTTP-сервером без внешнего интернета
 
@@ -185,6 +230,16 @@ py tests/reverse_scenarios.py
 | `reverse_dependencies()` | Обратный DFS |
 | `load_graph()` | Загрузка графа NuGet или файла |
 | `show_reverse()` | Вывод обратных зависимостей |
+| `to_plantuml()` | Построение описания PlantUML |
+| `show_uml()` | Вывод диаграммы |
+| `make_project()` | Временный проект .NET |
+| `run_tool()` | Запуск команды .NET |
+| `read_packages()` | Чтение штатного списка пакетов |
+| `read_graph()` | Чтение пакетов учебного графа |
+| `read_assets()` | Чтение связей из assets.json |
+| `show_edges()` | Сравнение рёбер |
+| `show_diff()` | Сравнение имён и версий |
+| `compare_one()` | Сравнение одного NuGet-пакета |
 | `main()` | Обработка параметров CLI |
 
 ## Файлы
@@ -197,11 +252,13 @@ py tests/reverse_scenarios.py
 - `src/reverse.py` - обратные связи и обход
 - `src/versions.py` - версии и диапазоны NuGet
 - `src/nuget_graph.py` - загрузка транзитивных зависимостей NuGet
+- `src/uml.py` - формирование текста PlantUML
+- `scripts/compare_dotnet.py` - сравнение со штатным NuGet
 - `examples/` - конфигурации и тестовые графы
-- `tests/` - unit-тесты и демонстрационные сценарии этапов 1-4
+- `tests/` - unit-тесты и демонстрационные сценарии этапов 1-5
 - `Makefile` - дополнительный способ запуска при наличии `make`
 
 ## Git
 
 Проект разделён на 5 этапов с отдельными коммитами
-Четвёртый коммит: `feat(reverse): add reverse dependency lookup`
+Пятый коммит: `feat(uml): add PlantUML dependency graphs`

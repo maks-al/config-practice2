@@ -2,6 +2,8 @@
 
 from src.graph import build_graph, is_filtered
 
+MAX_SINGLE_MATCH = 1
+
 
 def filter_repo(repo: dict[str, list[str]], text: str) -> dict:
     """Исключить узлы и связи по заданной подстроке"""
@@ -30,7 +32,7 @@ def find_target(graph: dict, target: str) -> str:
              if node.partition("@")[0].casefold() == name]
     if not found:
         raise ValueError(f"пакет не найден в графе: {target}")
-    if len(found) > 1:
+    if len(found) > MAX_SINGLE_MATCH:
         raise ValueError("несколько версий пакета, укажите имя@версия")
     return found[0]
 

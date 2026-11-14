@@ -10,6 +10,7 @@ from src.graph import build_graph, read_test_repo
 from src.nuget import direct_dependencies, normalize_version
 from src.nuget_graph import NugetGraph
 from src.reverse import filter_repo, reverse_dependencies
+from src.uml import to_plantuml
 
 DEFAULT = Path(__file__).resolve().parent.parent / "examples/config_test.csv"
 
@@ -25,6 +26,8 @@ def main(argv: list[str] | None = None) -> int:
                       help="построить граф зависимостей DFS")
     mode.add_argument("--reverse", nargs="?", const="", metavar="PACKAGE",
                       help="показать обратные зависимости пакета")
+    mode.add_argument("--uml", action="store_true",
+                      help="вывести граф в формате PlantUML")
     args = parser.parse_args(argv)
 
     try:
@@ -34,6 +37,9 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.graph:
             show_graph(config, args.config)
+            return 0
+        if args.uml:
+            show_uml(config, args.config)
             return 0
         if args.reverse is not None:
             show_reverse(config, args.config, args.reverse or config.package)
@@ -102,6 +108,12 @@ def show_reverse(config, filename, target: str) -> None:
     print(f"Обратные зависимости: {node}")
     for name, parents in reverse.items():
         print(f"{name} <- {', '.join(parents) if parents else '(нет)'}")
+
+
+def show_uml(config, filename) -> None:
+    """Вывести текст графа на языке PlantUML"""
+    _, graph = load_graph(config, filename)
+    print(to_plantuml(graph))
 
 
 if __name__ == "__main__":

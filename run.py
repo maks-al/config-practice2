@@ -1,4 +1,4 @@
-"""Точка запуска проекта в Windows: py run.py."""
+"""Точка запуска проекта в Windows: py run.py"""
 
 from src.main import main
 

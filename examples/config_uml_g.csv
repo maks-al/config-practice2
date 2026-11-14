@@ -1,0 +1,7 @@
+key,value
+package,G
+repository,graph_uml.txt
+test_mode,true
+version,1.0.0
+max_depth,3
+filter,

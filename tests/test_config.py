@@ -1,4 +1,4 @@
-"""Проверки CSV и всех параметров первого этапа."""
+"""Проверки CSV и всех параметров первого этапа"""
 
 import csv
 import tempfile
@@ -9,10 +9,10 @@ from src.config import load_config
 
 
 class ConfigTests(unittest.TestCase):
-    """Проверки корректных и ошибочных настроек."""
+    """Проверки корректных и ошибочных настроек"""
 
     def setUp(self):
-        """Создать независимый временный тестовый репозиторий."""
+        """Создать независимый временный тестовый репозиторий"""
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.folder = Path(temp.name)
@@ -23,7 +23,7 @@ class ConfigTests(unittest.TestCase):
         }
 
     def save(self, data=None):
-        """Записать CSV с заданными значениями полей."""
+        """Записать CSV с заданными значениями полей"""
         path = self.folder / "config.csv"
         with path.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
@@ -32,7 +32,7 @@ class ConfigTests(unittest.TestCase):
         return path
 
     def test_test_mode(self):
-        """Тестовый режим читает файл относительно CSV."""
+        """Тестовый режим читает файл относительно CSV"""
         cfg = load_config(self.save())
         self.assertEqual(cfg.package, "A")
         self.assertTrue(cfg.test_mode)
@@ -40,7 +40,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(cfg.filter, "")
 
     def test_nuget_mode(self):
-        """Реальный режим принимает URL и версию NuGet."""
+        """Реальный режим принимает URL и версию NuGet"""
         data = dict(self.data)
         data.update(package="Newtonsoft.Json", test_mode="false")
         data.update(repository="https://api.nuget.org/v3/index.json")
@@ -50,7 +50,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(cfg.filter, "Microsoft")
 
     def test_invalid_parameters(self):
-        """Каждый из шести параметров проходит валидацию."""
+        """Каждый из шести параметров проходит валидацию"""
         cases = {
             "package": "bad-name", "repository": "missing.txt",
             "test_mode": "maybe", "version": "invalid",
@@ -64,34 +64,34 @@ class ConfigTests(unittest.TestCase):
                     load_config(self.save(data))
 
     def test_bad_url(self):
-        """Режим NuGet отклоняет некорректный адрес."""
+        """Режим NuGet отклоняет некорректный адрес"""
         data = dict(self.data)
         data.update(test_mode="false", repository="not-a-url")
         with self.assertRaisesRegex(ValueError, "repository"):
             load_config(self.save(data))
 
     def test_zero_depth(self):
-        """Глубина 0 допустима: только исходный пакет."""
+        """Глубина 0 допустима: только исходный пакет"""
         data = dict(self.data)
         data["max_depth"] = "0"
         self.assertEqual(load_config(self.save(data)).max_depth, 0)
 
     def test_missing_parameter(self):
-        """Пропущенный параметр вызывает ошибку."""
+        """Пропущенный параметр вызывает ошибку"""
         data = dict(self.data)
         del data["version"]
         with self.assertRaisesRegex(ValueError, "version"):
             load_config(self.save(data))
 
     def test_unknown_parameter(self):
-        """Неизвестный ключ не игнорируется молча."""
+        """Неизвестный ключ не игнорируется молча"""
         data = dict(self.data)
         data["unused"] = "anything"
         with self.assertRaisesRegex(ValueError, "unused"):
             load_config(self.save(data))
 
     def test_duplicate_parameter(self):
-        """Дублирование ключа запрещено."""
+        """Дублирование ключа запрещено"""
         path = self.save()
         with path.open("a", encoding="utf-8") as file:
             file.write("package,B\n")
@@ -99,19 +99,19 @@ class ConfigTests(unittest.TestCase):
             load_config(path)
 
     def test_bad_header(self):
-        """Проверяется заголовок CSV: key,value."""
+        """Проверяется заголовок CSV: key,value"""
         path = self.folder / "bad.csv"
         path.write_text("name,content\npackage,A\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "key,value"):
             load_config(path)
 
     def test_missing_file(self):
-        """Отсутствующий CSV выдаёт понятную ошибку."""
+        """Отсутствующий CSV выдаёт понятную ошибку"""
         with self.assertRaisesRegex(ValueError, "CSV"):
             load_config(self.folder / "absent.csv")
 
     def test_quoted_csv_value(self):
-        """CSV корректно хранит подстроку с запятой."""
+        """CSV корректно хранит подстроку с запятой"""
         data = dict(self.data)
         data["filter"] = "A,B"
         self.assertEqual(load_config(self.save(data)).filter, "A,B")
